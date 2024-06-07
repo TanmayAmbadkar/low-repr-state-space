@@ -3,7 +3,7 @@ import torch
 
 class CustomBipedalWalker(gym.Env):
     def __init__(self, state_processor = None, reduced_dim = None):
-        self.env = gym.make('BipedalWalker-v3')
+        self.env = gym.make("LunarLander-v2")
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space if state_processor is None else gym.spaces.Box(low=-1, high=1, shape=(reduced_dim,))
         self.state_processor = state_processor

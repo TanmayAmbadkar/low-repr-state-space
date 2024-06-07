@@ -1,5 +1,4 @@
 from env import CustomBipedalWalker
-from ppo.policy import train_policy
 from stable_baselines3 import PPO
 from sb3_utils import learn
 import sys
@@ -9,32 +8,35 @@ import statistics
 from transforms import Autoencoder, fit
 import torch
 # Create the BipedalWalker environment
+from stable_baselines3.common.utils import set_random_seed
+
+set_random_seed(10)
 env = CustomBipedalWalker()
 
 
 # Create the PPO agent
 policy_kwargs = dict(activation_fn=torch.nn.Tanh,
-                     net_arch=dict(pi=[32, 8], vf=[32, 8]))
-agent = PPO("MlpPolicy", env, verbose=1, policy_kwargs=policy_kwargs,clip_range=0.18, gae_lambda=0.95, gamma = 0.999, learning_rate=0.0003)
+                     net_arch=dict(pi=[16, 4], vf=[16, 4]))
+agent = PPO("MlpPolicy", env, verbose=1, device = "cpu")
 
 # Train the agent
-_, observations = learn(agent, total_timesteps=5000000)
+_, observations = learn(agent, total_timesteps=500000)
 print()
 observations = np.array(observations)
 observations = observations.reshape(observations.shape[0], -1)  
 # umap_model = umap.UMAP(n_neighbors=5, min_dist=0.3, n_components=4)
 
-# model = Autoencoder(observations.shape[1], 4)
-# fit(observations=observations, autoencoder=model)
+model = Autoencoder(observations.shape[1], 3)
+fit(observations=observations, autoencoder=model)
 
 # model = PCA(n_components=4)
 # model.fit(observations)
 
 print("Fitted AE model, transforming the environment")
 
-env_reduced = CustomBipedalWalker(agent.policy.mlp_extractor.policy_net, reduced_dim=8)
-agent_reduced = PPO("MlpPolicy", env_reduced, verbose=1)
-_, _ = learn(agent_reduced, total_timesteps=5000000)
+env_reduced = CustomBipedalWalker(model.encoder, reduced_dim=3) # Replace model.encoder with different dimensionality reduction techniques
+agent_reduced = PPO("MlpPolicy", env_reduced, verbose=1, device = "cpu")
+_, _ = learn(agent_reduced, total_timesteps=500000)
 print()
 
 
