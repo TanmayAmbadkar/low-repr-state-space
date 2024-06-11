@@ -5,7 +5,7 @@ import sys
 from sklearn.decomposition import PCA
 import numpy as np
 import statistics
-from transforms import Autoencoder, fit
+from transforms import Autoencoder, fit, CascadingAutoEncoder, fit_cascading_autoencoder
 import torch
 from stable_baselines3.common.utils import set_random_seed
 
@@ -67,6 +67,14 @@ def fit_autoencoder(observations, input_dim, reduced_dim=3):
     fit(observations=observations, autoencoder=model)
     return model
 
+
+def fit_cascading(observations, input_dim, layers_sizes):
+    model = CascadingAutoEncoder(input_dim, layers_sizes)
+    fit_cascading_autoencoder(observations, model)
+    return model
+
+
+
 def evaluate_agent(env, agent, episodes=5):
     """
     Evaluate the PPO agent in the specified environment.
@@ -114,11 +122,19 @@ def main():
 
     # Fit the Autoencoder model
     # Change autoencoder to desired model, create function above
-    model = fit_autoencoder(observations, input_dim=observations.shape[1])
+
+    # model = fit_autoencoder(observations, input_dim=observations.shape[1])
+
+    model = fit_cascading(observations, input_dim=observations.shape[1], layers_sizes=[16, 8, 4])
+
     
     # Create the reduced environment and agent
-    env_reduced = create_environment(model.encoder, reduced_dim=3)
     
+    # env_reduced = create_environment(model.encoder, reduced_dim=3)
+    
+    env_reduced = create_environment(model.encoder, reduced_dim=4)
+
+
     agent_reduced = create_agent(env_reduced)
 
     # Train the reduced agent

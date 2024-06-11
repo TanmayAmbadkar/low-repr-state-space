@@ -131,3 +131,54 @@ def fit(observations, autoencoder):
 
     # Train the autoencoder
     trainer.fit(autoencoder, train_loader)
+
+
+class CascadingAutoEncoder(pl.LightningModule):
+    def __init__(self, n_features, layers_sizes):
+        super().__init__()
+        self.layers_sizes =  [n_features] + layers_sizes
+        encoder_layers = []
+        decoder_layers = []
+
+        """
+        creating encoder layers
+        """
+        for i in range(len(self.layers_sizes) - 1):
+            encoder_layers.append(nn.Linear(self.layers_sizes[i],self.layers_sizes[i+1]))
+            encoder_layers.append(nn.ReLU())
+
+
+        """
+        create the decoder layers in reverse
+        """
+
+        for i in range(len(self.layers_sizes) - 1, 0, -1):
+            decoder_layers.append(nn.Linear(self.layers_sizes[i], self.layers_sizes[i - 1]))
+            decoder_layers.append(nn.ReLU())
+
+        self.encoder = nn.Sequential(*encoder_layers[:-1])
+        self.decoder = nn.Sequential(*decoder_layers[:-1])
+
+    def forward(self, x):
+        encoder = self.encoder(x)
+        decoder = self.decoder(encoder)
+        return decoder
+    
+    def training_step(self, batch, batch_idx):
+        x, _ = batch
+        reconstructed = self(x)
+        loss = nn.MSELoss()(reconstructed, x)
+        self.log('train_loss', loss, prog_bar=True, on_epoch=True)
+        return loss
+    
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=0.001)
+    
+    
+    
+
+def fit_cascading_autoencoder(observations, autoencoder):
+    dataset = CustomDataset(observations)
+    train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    trainer = pl.Trainer(max_epochs=30, accelerator="cpu")
+    trainer.fit(autoencoder, train_loader)

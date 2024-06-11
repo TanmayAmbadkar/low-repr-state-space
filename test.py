@@ -5,7 +5,7 @@ import sys
 from sklearn.decomposition import PCA
 import numpy as np
 import statistics
-from transforms import Autoencoder, fit
+from transforms import Autoencoder, fit, CascadingAutoEncoder, fit_cascading_autoencoder
 import torch
 # Create the BipedalWalker environment
 from stable_baselines3.common.utils import set_random_seed
@@ -26,15 +26,20 @@ observations = np.array(observations)
 observations = observations.reshape(observations.shape[0], -1)  
 # umap_model = umap.UMAP(n_neighbors=5, min_dist=0.3, n_components=4)
 
-model = Autoencoder(observations.shape[1], 3)
-fit(observations=observations, autoencoder=model)
+# model = Autoencoder(observations.shape[1], 3)
+# fit(observations=observations, autoencoder=model)
+
+model = CascadingAutoEncoder(observations.shape[1], [32,16, 8, 4])
+fit_cascading_autoencoder(observations, model)
 
 # model = PCA(n_components=4)
 # model.fit(observations)
 
-print("Fitted AE model, transforming the environment")
+print("Fitted (c)AE model, transforming the environment")
 
-env_reduced = CustomBipedalWalker(model.encoder, reduced_dim=3) # Replace model.encoder with different dimensionality reduction techniques
+# env_reduced = CustomBipedalWalker(model.encoder, reduced_dim=3) # Replace model.encoder with different dimensionality reduction techniques
+env_reduced = CustomBipedalWalker(model.encoder, reduced_dim=4)
+
 agent_reduced = PPO("MlpPolicy", env_reduced, verbose=1, device = "cpu")
 _, _ = learn(agent_reduced, total_timesteps=500000)
 print()
