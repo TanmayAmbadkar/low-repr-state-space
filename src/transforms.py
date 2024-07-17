@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from torch.utils.data import Dataset, DataLoader
+from abstract_interpretation.neural_network import LinearLayer, ReLULayer, NeuralNetwork
 
 # Define the Autoencoder Network
 class Autoencoder(pl.LightningModule):
@@ -17,16 +18,18 @@ class Autoencoder(pl.LightningModule):
         super().__init__()
         self.n_features = n_features
         self.reduced_dim = reduced_dim
-        self.encoder = nn.Sequential(
-            nn.Linear(n_features, 12),
-            nn.ReLU(),
-            nn.Linear(12, reduced_dim)
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(reduced_dim, 12),
-            nn.ReLU(),
-            nn.Linear(12, n_features)
-        )
+        self.encoder = NeuralNetwork([LinearLayer(n_features, 12), ReLULayer(), LinearLayer(12, reduced_dim)])
+        self.decoder = NeuralNetwork([LinearLayer(reduced_dim, 12), ReLULayer(), LinearLayer(12, n_features)])
+        # self.encoder = nn.Sequential(
+        #     nn.Linear(n_features, 12),
+        #     nn.ReLU(),
+        #     nn.Linear(12, reduced_dim)
+        # )
+        # self.decoder = nn.Sequential(
+        #     nn.Linear(reduced_dim, 12),
+        #     nn.ReLU(),
+        #     nn.Linear(12, n_features)
+        # )
 
     def forward(self, x):
         """
@@ -127,7 +130,7 @@ def fit(observations, autoencoder):
     train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     # Initialize the trainer
-    trainer = pl.Trainer(max_epochs=30, accelerator="cpu")
+    trainer = pl.Trainer(max_epochs=10, accelerator="cpu")
 
     # Train the autoencoder
     trainer.fit(autoencoder, train_loader)

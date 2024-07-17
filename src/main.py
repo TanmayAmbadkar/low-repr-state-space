@@ -1,4 +1,4 @@
-from env import CustomBipedalWalker
+from env.env import CustomBipedalWalker
 from stable_baselines3 import PPO
 from sb3_utils import learn
 import sys

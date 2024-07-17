@@ -7,6 +7,8 @@ import numpy as np
 import statistics
 from transforms import Autoencoder, fit
 import torch
+from imitation.util.util import make_vec_env
+
 # Create the BipedalWalker environment
 from stable_baselines3.common.utils import set_random_seed
 
@@ -17,6 +19,15 @@ env = CustomBipedalWalker()
 # Create the PPO agent
 policy_kwargs = dict(activation_fn=torch.nn.Tanh,
                      net_arch=dict(pi=[16, 4], vf=[16, 4]))
+rng = np.random.default_rng(0)
+
+env = make_vec_env(
+    "LunarLander-v2",
+    rng=rng,
+    n_envs=1,
+    post_wrappers=[lambda env, _: RolloutInfoWrapper(env)],  # for computing rollouts
+)
+
 agent = PPO("MlpPolicy", env, verbose=1, device = "cpu")
 
 # Train the agent
